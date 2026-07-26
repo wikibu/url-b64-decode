@@ -121,4 +121,23 @@ func TestFetch(t *testing.T) {
 			t.Fatalf("server called %d times, want 2", n)
 		}
 	})
+
+	t.Run("negative retries behaves as zero", func(t *testing.T) {
+		var calls int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&calls, 1)
+			fmt.Fprint(w, "b2s=")
+		}))
+		defer srv.Close()
+		got, err := fetch(srv.Client(), srv.URL, -1, 0)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got != "b2s=" {
+			t.Fatalf("got %q, want %q", got, "b2s=")
+		}
+		if n := atomic.LoadInt32(&calls); n != 1 {
+			t.Fatalf("server called %d times, want 1", n)
+		}
+	})
 }

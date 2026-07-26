@@ -42,6 +42,9 @@ func head(s string, n int) string {
 // Network errors, timeouts, and 5xx responses are retried up to
 // `retries` times with `retryWait` between attempts; 4xx fails immediately.
 func fetch(client *http.Client, url string, retries int, retryWait time.Duration) (string, error) {
+	if retries < 0 {
+		retries = 0
+	}
 	var lastErr error
 	for attempt := 0; attempt <= retries; attempt++ {
 		if attempt > 0 {
