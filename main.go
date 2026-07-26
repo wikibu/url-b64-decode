@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -31,4 +34,45 @@ func head(s string, n int) string {
 		return s[:n]
 	}
 	return s
+}
+
+// fetch GETs url, returning the response body on any 2xx status.
+// Network errors, timeouts, and 5xx responses are retried up to
+// `retries` times with `retryWait` between attempts; 4xx fails immediately.
+func fetch(client *http.Client, url string, retries int, retryWait time.Duration) (string, error) {
+	var lastErr error
+	for attempt := 0; attempt <= retries; attempt++ {
+		if attempt > 0 {
+			time.Sleep(retryWait)
+		}
+		body, retryable, err := doGet(client, url)
+		if err == nil {
+			return body, nil
+		}
+		if !retryable {
+			return "", err
+		}
+		lastErr = err
+	}
+	return "", fmt.Errorf("all %d attempts failed, last error: %v", retries+1, lastErr)
+}
+
+func doGet(client *http.Client, url string) (body string, retryable bool, err error) {
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", true, err
+	}
+	defer resp.Body.Close()
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", true, err
+	}
+	switch {
+	case resp.StatusCode >= 200 && resp.StatusCode < 300:
+		return string(data), false, nil
+	case resp.StatusCode >= 500:
+		return "", true, fmt.Errorf("server error: HTTP %d", resp.StatusCode)
+	default:
+		return "", false, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
 }
