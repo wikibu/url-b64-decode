@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -75,4 +77,32 @@ func doGet(client *http.Client, url string) (body string, retryable bool, err er
 	default:
 		return "", false, fmt.Errorf("HTTP %d", resp.StatusCode)
 	}
+}
+
+func main() {
+	timeout := flag.Duration("timeout", 10*time.Second, "per-request timeout")
+	retries := flag.Int("retries", 3, "retry count on network errors and 5xx")
+	retryWait := flag.Duration("retry-wait", time.Second, "wait between retries")
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: url-b64-decode [flags] <URL>\n\nFlags:\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+	if flag.NArg() != 1 {
+		flag.Usage()
+		os.Exit(2)
+	}
+
+	client := &http.Client{Timeout: *timeout}
+	body, err := fetch(client, flag.Arg(0), *retries, *retryWait)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+	decoded, err := decodeBase64UTF8(body)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+	fmt.Println(decoded)
 }
