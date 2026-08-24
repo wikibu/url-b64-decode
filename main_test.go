@@ -141,3 +141,25 @@ func TestFetch(t *testing.T) {
 		}
 	})
 }
+
+func TestVersionLine(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		commit  string
+		date    string
+		want    string
+	}{
+		{"release build", "v1.0.0", "6a07da1", "2026-08-25T10:00:00Z",
+			"url-b64-decode v1.0.0 (commit 6a07da1, built 2026-08-25T10:00:00Z)"},
+		{"dev build", "dev", "none", "unknown",
+			"url-b64-decode dev (commit none, built unknown)"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := versionLine(tt.version, tt.commit, tt.date); got != tt.want {
+				t.Fatalf("versionLine() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

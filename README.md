@@ -14,6 +14,10 @@
 
 - Go 1.26+（仅标准库，无其他依赖）
 
+## 安装
+
+预编译二进制见 [GitHub Releases](https://github.com/wikibu/url-b64-decode/releases)：下载对应平台/架构的压缩包（Linux、macOS 为 `.tar.gz`，Windows 为 `.zip`），解包后将二进制放入 PATH 即可。
+
 ## 构建
 
 ```bash
@@ -29,6 +33,7 @@ Flags:
   -timeout duration     单次请求超时（默认 10s）
   -retries int          失败重试次数（默认 3）
   -retry-wait duration  重试间隔（默认 1s）
+  -version              显示版本信息并退出
 ```
 
 示例：

@@ -82,15 +82,33 @@ func doGet(client *http.Client, url string) (body string, retryable bool, err er
 	}
 }
 
+// version, commit, and date are set via -ldflags at release build time;
+// the defaults identify a local development build.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
+// versionLine formats the -version output line.
+func versionLine(version, commit, date string) string {
+	return fmt.Sprintf("url-b64-decode %s (commit %s, built %s)", version, commit, date)
+}
+
 func main() {
 	timeout := flag.Duration("timeout", 10*time.Second, "per-request timeout")
 	retries := flag.Int("retries", 3, "retry count on network errors and 5xx")
 	retryWait := flag.Duration("retry-wait", time.Second, "wait between retries")
+	showVersion := flag.Bool("version", false, "show version and exit")
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage: url-b64-decode [flags] <URL>\n\nFlags:\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+	if *showVersion {
+		fmt.Println(versionLine(version, commit, date))
+		os.Exit(0)
+	}
 	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(2)
