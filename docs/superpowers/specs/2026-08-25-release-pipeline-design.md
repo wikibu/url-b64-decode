@@ -80,7 +80,7 @@ var (
 ## Release workflow（release.yml）
 
 - 触发：`push: tags: ["v*"]`
-- 权限：`contents: write`
+- 权限：workflow 级 `contents: read`，`goreleaser` job 单独 `contents: write`（最小权限原则）
 - job `test`：与 ci.yml 相同的 vet/test/build 三连
 - job `goreleaser`（`needs: test`）：
   - `actions/checkout`，`fetch-depth: 0`（changelog 需要完整历史）
